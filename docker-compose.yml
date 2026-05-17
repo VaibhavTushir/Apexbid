@@ -1,0 +1,68 @@
+services:
+  # The Database
+  apexbid-db:
+    image: postgres:15-alpine
+    container_name: apexbid-postgres
+    environment:
+      POSTGRES_USER: vaibhav_admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: apexbid_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_apexbid_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # The Redis Server
+  apexbid-redis:
+    image: redis:7-alpine
+    container_name: apexbid-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_apexbid_data:/data
+    restart: unless-stopped
+
+  backend1:
+    build: .
+    container_name: apexbid-node-1
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://apexbid-db:5432/apexbid_db
+      - SPRING_DATASOURCE_USERNAME=vaibhav_admin
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATA_REDIS_HOST=apexbid-redis
+      - SPRING_SQL_INIT_MODE=always  # This single node initializes the structural schema
+      - INSTANCE_ID=node-1
+    depends_on:
+      - apexbid-db
+      - apexbid-redis
+
+  backend2:
+    build: .
+    container_name: apexbid-node-2
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://apexbid-db:5432/apexbid_db
+      - SPRING_DATASOURCE_USERNAME=vaibhav_admin
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATA_REDIS_HOST=apexbid-redis
+      - SPRING_SQL_INIT_MODE=never   #  Node 2  skips initialization to eliminate race conditions
+      - INSTANCE_ID=node-2
+    depends_on:
+      - apexbid-db
+      - apexbid-redis
+
+  nginx-proxy:
+    image: nginx:stable-alpine
+    container_name: apexbid-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend1
+      - backend2
+
+volumes:
+  pg_apexbid_data:
+  redis_apexbid_data:
