@@ -33,7 +33,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_DATA_REDIS_HOST=apexbid-redis
       - SPRING_SQL_INIT_MODE=always  # This single node initializes the structural schema
-      - INSTANCE_ID=node-1
+      - NODE_ID=node-1
     depends_on:
       - apexbid-db
       - apexbid-redis
@@ -47,7 +47,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_DATA_REDIS_HOST=apexbid-redis
       - SPRING_SQL_INIT_MODE=never   #  Node 2  skips initialization to eliminate race conditions
-      - INSTANCE_ID=node-2
+      - NODE_ID=node-2
     depends_on:
       - apexbid-db
       - apexbid-redis

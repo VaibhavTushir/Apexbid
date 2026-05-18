@@ -23,17 +23,13 @@ public class Wallet {
     @Column(name = "balance", nullable = false)
     private Long balance;
 
-    @Column(name = "locked_funds", nullable = false)
-    private Long lockedFunds;
-
     @Version
     @Column(name = "version")
     private Long version;
 
-    public Wallet(Long userId, Long balance, Long lockedFunds) {
+    public Wallet(Long userId, Long balance) {
         this.userId = userId;
         this.balance = balance;
-        this.lockedFunds = lockedFunds;
         this.version = 0L;
     }
 }

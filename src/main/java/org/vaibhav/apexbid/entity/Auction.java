@@ -5,6 +5,8 @@ import lombok.*;
 import org.vaibhav.apexbid.enums.AuctionStatus;
 import org.vaibhav.apexbid.enums.AuctionType;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "auctions")
 @Getter
@@ -50,10 +52,10 @@ public class Auction {
     @JoinColumn(name = "winner_id")
     private User winner; // Nullable until active bids fall or auction settles
 
-    // Timestamps (Epoch Milliseconds)
-    @Column(name = "start_time_ms", nullable = false)
-    private Long startTimeMs;
+    // Timestamps
+    @Column(name = "start_time", nullable = false)
+    private Instant startTime;
 
-    @Column(name = "end_time_ms", nullable = false)
-    private Long endTimeMs; // Dynamically extended if ANTI_SNIPE triggers
+    @Column(name = "end_time", nullable = false)
+    private Instant endTime; // Dynamically extended if ANTI_SNIPE triggers
 }
