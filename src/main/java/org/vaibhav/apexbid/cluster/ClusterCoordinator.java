@@ -44,7 +44,7 @@ public class ClusterCoordinator {
      * 1. Global Cluster Orchestration Loop (Runs every 5 seconds)
      * Handles failover lock acquisition, lease extension, and cold-start warming.
      */
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 10000)
     public void coordinateCluster() {
         try {
             // Attempt to acquire the lock if it does not exist (SETNX with 60s TTL)
@@ -62,7 +62,7 @@ public class ClusterCoordinator {
                     log.debug("[HEARTBEAT] {} renewed leadership lease for 60 seconds.", nodeId);
                 } else {
                     this.isLeader = false;
-                    log.info("[FOLLOWER] {} confirmed leader is {}", nodeId, currentLeader);
+//                    log.info("[FOLLOWER] {} confirmed leader is {}", nodeId, currentLeader);
                     return;
                 }
             }

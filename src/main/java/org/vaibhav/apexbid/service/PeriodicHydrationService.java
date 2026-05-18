@@ -3,9 +3,9 @@ package org.vaibhav.apexbid.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.vaibhav.apexbid.entity.Auction;
+import org.vaibhav.apexbid.dto.AuctionRedisDto;
 import org.vaibhav.apexbid.enums.AuctionStatus;
-import org.vaibhav.apexbid.mapper.AuctionRedisMapper;
+import org.vaibhav.apexbid.mapper.AuctionDtoRedisMapper;
 import org.vaibhav.apexbid.repository.AuctionRepository;
 
 import java.time.Instant;
@@ -17,12 +17,12 @@ import java.util.Map;
 public class PeriodicHydrationService {
     private final StringRedisTemplate stringRedisTemplate;
     private final AuctionRepository auctionRepository;
-    private final AuctionRedisMapper auctionRedisMapper;
+    private final AuctionDtoRedisMapper auctionDtoRedisMapper;
 
-    public PeriodicHydrationService(StringRedisTemplate stringRedisTemplate, AuctionRepository auctionRepository, AuctionRedisMapper auctionRedisMapper) {
+    public PeriodicHydrationService(StringRedisTemplate stringRedisTemplate, AuctionRepository auctionRepository, AuctionDtoRedisMapper auctionDtoRedisMapper) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.auctionRepository = auctionRepository;
-        this.auctionRedisMapper = auctionRedisMapper;
+        this.auctionDtoRedisMapper = auctionDtoRedisMapper;
     }
 
     public void runRollingHydration(String nodeId, String lockKey) {
@@ -31,16 +31,16 @@ public class PeriodicHydrationService {
         }
         try {
             // 1-Hour lookahead window
-            Instant lookAheadCutoff = Instant.now().plusSeconds(3600);
-            List<Auction> upcomingAuctions = auctionRepository.findByStatusAndStartTimeLessThanEqual(AuctionStatus.UPCOMING, lookAheadCutoff);
+            List<AuctionRedisDto> upcomingAuctions = auctionRepository.findAuctionsByStatusAndStartTimeLessThanEqual(List.of(AuctionStatus.UPCOMING),
+                    Instant.now().plusSeconds(3600));
             int newHydrationCount = 0;
-            for (Auction auction : upcomingAuctions) {
-                String auctionIdString = auction.getId().toString();
+            for (AuctionRedisDto auction : upcomingAuctions) {
+                String auctionIdString = auction.id().toString();
                 String auctionHashKey = "auction:" + auctionIdString;
                 if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(auctionHashKey))) {
-                    Map<String, String> auctionHash = auctionRedisMapper.toRedisHash(auction);
+                    Map<String, String> auctionHash = auctionDtoRedisMapper.toRedisHash(auction);
                     stringRedisTemplate.opsForHash().putAll(auctionHashKey, auctionHash);
-                    long startTimeEpoch = auction.getStartTime().toEpochMilli();
+                    long startTimeEpoch = auction.startTime().toEpochMilli();
                     stringRedisTemplate.opsForZSet().add("auctions:upcoming", auctionIdString, startTimeEpoch);
                     newHydrationCount++;
                 }
