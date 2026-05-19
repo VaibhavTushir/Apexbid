@@ -62,7 +62,7 @@ public class AuthController {
                     .body(ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid email or password."));
         }
         //check if admin
-        boolean isAdmin = userRepository.isAdmin(user.getId());
+        Boolean isAdmin = userRepository.isAdmin(user.getId());
 
         // generate token
         String token = jwtService.generateToken(user, isAdmin);
