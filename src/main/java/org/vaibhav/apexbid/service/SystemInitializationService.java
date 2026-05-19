@@ -3,7 +3,7 @@ package org.vaibhav.apexbid.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.vaibhav.apexbid.dto.AuctionRedisDto;
+import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.enums.AuctionStatus;
 import org.vaibhav.apexbid.mapper.AuctionDtoRedisMapper;
 import org.vaibhav.apexbid.repository.AuctionRepository;
@@ -39,12 +39,12 @@ public class SystemInitializationService {
             log.info("[INITIALIZATION] Cold Start. {} is warming up Redis", nodeId);
 
             // Load all ACTIVE and UPCOMING auctions that should be active within the next 1 hour
-            List<AuctionRedisDto> targetAuctions = auctionRepository.findAuctionsByStatusAndStartTimeLessThanEqual(
+            List<AuctionRedis> targetAuctions = auctionRepository.findAuctionsByStatusAndStartTimeLessThanEqual(
                     List.of(AuctionStatus.ACTIVE, AuctionStatus.UPCOMING),
                     Instant.now().plusSeconds(3600)
             );
 
-            for (AuctionRedisDto auction : targetAuctions) {
+            for (AuctionRedis auction : targetAuctions) {
                 String auctionIdString = auction.id().toString();
                 String auctionHashKey = "auction:" + auctionIdString;
 

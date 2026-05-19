@@ -5,7 +5,7 @@ import org.vaibhav.apexbid.enums.AuctionType;
 
 import java.time.Instant;
 
-public record AuctionRedisDto(
+public record AuctionRedis(
         Long id,
         String title,
         AuctionType auctionType,

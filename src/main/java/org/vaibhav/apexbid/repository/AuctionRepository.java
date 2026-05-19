@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
-import org.vaibhav.apexbid.dto.AuctionRedisDto;
+import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.entity.Auction;
 import org.vaibhav.apexbid.enums.AuctionStatus;
 
@@ -26,7 +26,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
     void bulkActivateAuctions(@Param("ids") List<Long> ids);
 
     @Query("""
-                SELECT new org.vaibhav.apexbid.dto.AuctionRedisDto(
+                SELECT new org.vaibhav.apexbid.dto.AuctionRedis(
                     a.id, a.title,a.auctionType, a.status, a.startPrice, a.winningBid, a.product.id,
                     s.id, s.username, a.startTime, a.endTime
                 )
@@ -35,7 +35,7 @@ public interface AuctionRepository extends JpaRepository<Auction, Long> {
                 WHERE a.status IN :statuses
                   AND (a.status = 'ACTIVE' OR a.startTime <= :startTime)
             """)
-    List<AuctionRedisDto> findAuctionsByStatusAndStartTimeLessThanEqual(
+    List<AuctionRedis> findAuctionsByStatusAndStartTimeLessThanEqual(
             @Param("statuses") List<AuctionStatus> statuses,
             @Param("startTime") Instant startTime
     );

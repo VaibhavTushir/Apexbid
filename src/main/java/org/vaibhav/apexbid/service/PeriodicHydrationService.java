@@ -3,7 +3,7 @@ package org.vaibhav.apexbid.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.vaibhav.apexbid.dto.AuctionRedisDto;
+import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.enums.AuctionStatus;
 import org.vaibhav.apexbid.mapper.AuctionDtoRedisMapper;
 import org.vaibhav.apexbid.repository.AuctionRepository;
@@ -31,10 +31,10 @@ public class PeriodicHydrationService {
         }
         try {
             // 1-Hour lookahead window
-            List<AuctionRedisDto> upcomingAuctions = auctionRepository.findAuctionsByStatusAndStartTimeLessThanEqual(List.of(AuctionStatus.UPCOMING),
+            List<AuctionRedis> upcomingAuctions = auctionRepository.findAuctionsByStatusAndStartTimeLessThanEqual(List.of(AuctionStatus.UPCOMING),
                     Instant.now().plusSeconds(3600));
             int newHydrationCount = 0;
-            for (AuctionRedisDto auction : upcomingAuctions) {
+            for (AuctionRedis auction : upcomingAuctions) {
                 String auctionIdString = auction.id().toString();
                 String auctionHashKey = "auction:" + auctionIdString;
                 if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(auctionHashKey))) {

@@ -12,7 +12,7 @@ ON CONFLICT (id) DO NOTHING;
 
 SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(MAX(id), 1))
 FROM users;
-
+INSERT INTO administrators (user_id) VALUES (4) ON CONFLICT (user_id) DO NOTHING;
 
 -- 2. SEED WALLETS (Values in absolute cents)
 INSERT INTO wallets (user_id, balance, version)

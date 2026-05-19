@@ -33,6 +33,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_DATA_REDIS_HOST=apexbid-redis
       - SPRING_SQL_INIT_MODE=always  # This single node initializes the structural schema
+      - JWT_SECRET=fqLyNKs25Wae8P5m8IqtQfpeggAK5QIx8X6sB2kriAQ=
+      - JWT_EXPIRATION_MS=86400000
       - NODE_ID=node-1
     depends_on:
       - apexbid-db
@@ -47,6 +49,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_DATA_REDIS_HOST=apexbid-redis
       - SPRING_SQL_INIT_MODE=never   #  Node 2  skips initialization to eliminate race conditions
+      - JWT_SECRET=fqLyNKs25Wae8P5m8IqtQfpeggAK5QIx8X6sB2kriAQ=
+      - JWT_EXPIRATION_MS=86400000
       - NODE_ID=node-2
     depends_on:
       - apexbid-db

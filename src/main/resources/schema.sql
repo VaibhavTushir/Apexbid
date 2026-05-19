@@ -11,11 +11,17 @@ CREATE TABLE IF NOT EXISTS users
 CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
+-- Additional table to track admins
+CREATE TABLE IF NOT EXISTS administrators
+(
+    user_id     BIGINT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    assigned_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS wallets
 (
-    user_id      BIGINT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
-    balance      BIGINT NOT NULL DEFAULT 0,
-    version      BIGINT NOT NULL DEFAULT 0
+    user_id BIGINT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    balance BIGINT NOT NULL DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS products

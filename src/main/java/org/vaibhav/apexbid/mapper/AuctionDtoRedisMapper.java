@@ -2,7 +2,7 @@ package org.vaibhav.apexbid.mapper;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Component;
-import org.vaibhav.apexbid.dto.AuctionRedisDto;
+import org.vaibhav.apexbid.dto.AuctionRedis;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +10,7 @@ import java.util.Map;
 @Component
 public class AuctionDtoRedisMapper {
 
-    public @NonNull Map<String, String> toRedisHash(AuctionRedisDto auction) {
+    public @NonNull Map<String, String> toRedisHash(AuctionRedis auction) {
         Map<String, String> fields = new HashMap<>();
 
         fields.put("id", auction.id().toString());
