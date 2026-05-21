@@ -105,10 +105,10 @@ public class ClusterCoordinator {
     }
 
     /**
-     * 3. Rolling Long-Interval Look-Ahead Hydration (Runs every 10 minutes)
+     * 3. Rolling Long-Interval Look-Ahead Hydration (Runs every 1 minute)
      * Pulls upcoming database entries into Redis ahead of schedule.
      */
-    @Scheduled(fixedDelay = 600000)
+    @Scheduled(fixedDelay = 60000)
     public void tickRollingHydration() {
         if (!isLeader) {
             return;

@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS products
     name        VARCHAR(255) NOT NULL,
     description TEXT,
     image_url   TEXT,
-    secret_code VARCHAR(500),
+    secret_code TEXT         NOT NULL,
     seller_id   BIGINT       NOT NULL REFERENCES users (id),
     buyer_id    BIGINT REFERENCES users (id) -- null until purchased
 );

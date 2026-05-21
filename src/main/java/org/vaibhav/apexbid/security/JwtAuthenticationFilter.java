@@ -43,7 +43,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // 2. Extract the token
             final String jwt = authHeader.substring(7);
-            System.out.println("Extracted JWT: " + jwt);
+//            System.out.println("Extracted JWT: " + jwt);
             // 3. Extract data (JJWT automatically throws an Exception here if expired/tampered)
             Claims extractedJwt = jwtService.extractAllClaims(jwt);
             Long id = extractedJwt.get("userId", Long.class);

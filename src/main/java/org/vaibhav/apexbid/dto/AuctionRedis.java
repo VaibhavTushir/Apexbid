@@ -11,7 +11,6 @@ public record AuctionRedis(
         AuctionType auctionType,
         AuctionStatus status,
         Long startPrice,
-        Long winningBid,
         Long productId,
         Long sellerId,
         String sellerUsername,

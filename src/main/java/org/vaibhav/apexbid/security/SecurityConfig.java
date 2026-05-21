@@ -21,14 +21,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         return http
 
                 // We don't need it because JWTs are immune to CSRF if stored properly on the frontend
                 .csrf(AbstractHttpConfigurer::disable)
-
+                .cors(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()           // Anyone can log in/register
+                        .requestMatchers("/api/auth/**", "/error").permitAll()           // Anyone can log in/register
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")     // Only Admins can enter here
                         .anyRequest().authenticated()                          // Everything else needs a valid JWT
                 )

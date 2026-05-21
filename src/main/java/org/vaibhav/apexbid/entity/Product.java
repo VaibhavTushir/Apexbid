@@ -25,7 +25,7 @@ public class Product {
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
-    @Column(name = "secret_code", length = 500)
+    @Column(name = "secret_code", columnDefinition = "TEXT", nullable = false)
     private String secretCode;
 
     @ManyToOne(fetch = FetchType.LAZY)
