@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.vaibhav.apexbid.security.AuthenticatedUser;
 
 @RestController
-@RequestMapping("/api/demo")
+@RequestMapping("/demo")
 public class DemoController {
     @Value("${NODE_ID:local-node}")
     private String nodeId;
