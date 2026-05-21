@@ -6,12 +6,14 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -19,10 +21,13 @@ import java.util.Collections;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
+    private final HandlerExceptionResolver exceptionResolver;
+
     private final WebAuthenticationDetailsSource detailsSource = new WebAuthenticationDetailsSource();
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(JwtService jwtService, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
         this.jwtService = jwtService;
+        this.exceptionResolver = exceptionResolver;
     }
 
     @Override
@@ -40,11 +45,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String jwt = authHeader.substring(7);
             System.out.println("Extracted JWT: " + jwt);
             // 3. Extract data (JJWT automatically throws an Exception here if expired/tampered)
-            Claims extractedJwt= jwtService.extractAllClaims(jwt);
-            Long id= extractedJwt.get("userId", Long.class);
-            String email= extractedJwt.getSubject();
-            String username= extractedJwt.get("username", String.class);
-            String role= extractedJwt.get("role", String.class);
+            Claims extractedJwt = jwtService.extractAllClaims(jwt);
+            Long id = extractedJwt.get("userId", Long.class);
+            String email = extractedJwt.getSubject();
+            String username = extractedJwt.get("username", String.class);
+            String role = extractedJwt.get("role", String.class);
             AuthenticatedUser principal = new AuthenticatedUser(id, email, username);
             // 4. If extraction succeeds, authenticate the user in Spring's memory
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -57,17 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            String errorMessage = "Unauthorized";
-
-            if (e instanceof io.jsonwebtoken.ExpiredJwtException) {
-                errorMessage = "Token has expired. Please log in again.";
-            } else if (e instanceof io.jsonwebtoken.security.SignatureException) {
-                errorMessage = "Invalid token signature.";
-            }
-            response.getWriter().write("{\"error\": \"" + errorMessage + "\"}");
+            exceptionResolver.resolveException(request, response, null, e);
             return;
         }
         filterChain.doFilter(request, response);
