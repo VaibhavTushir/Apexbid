@@ -33,7 +33,7 @@ public class Product {
     private User seller; // Original creator/lister
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "buyer_id", nullable = false)
+    @JoinColumn(name = "buyer_id")
     private User buyer; // Current owner / inventory holder
 
 
