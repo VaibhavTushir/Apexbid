@@ -15,7 +15,13 @@ public class RedisScriptConfig {
         redisScript.setResultType(String.class);
         return redisScript;
     }
-
+    @Bean
+    public DefaultRedisScript<Long> hydrateAuctionScript() {
+        DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+        redisScript.setLocation(new ClassPathResource("scripts/hydrate_auction.lua"));
+        redisScript.setResultType(Long.class);
+        return redisScript;
+    }
 
     //Auction state transition scripts
 

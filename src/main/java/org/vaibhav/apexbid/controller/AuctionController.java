@@ -14,7 +14,6 @@ import org.vaibhav.apexbid.entity.Auction;
 import org.vaibhav.apexbid.entity.Product;
 import org.vaibhav.apexbid.entity.User;
 import org.vaibhav.apexbid.enums.AuctionStatus;
-import org.vaibhav.apexbid.mapper.AuctionDtoRedisMapper;
 import org.vaibhav.apexbid.repository.AuctionRepository;
 import org.vaibhav.apexbid.repository.ProductRepository;
 import org.vaibhav.apexbid.security.AuthenticatedUser;
@@ -33,20 +32,17 @@ public class AuctionController {
     private final AuctionRepository auctionRepository;
     private final ProductRepository productRepository;
     private final SecretEncryptionUtil secretEncryptionUtil;
-    private final AuctionDtoRedisMapper auctionDtoRedisMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final AuctionQueryService auctionQueryService;
 
     public AuctionController(AuctionRepository auctionRepository,
                              ProductRepository productRepository,
                              SecretEncryptionUtil secretEncryptionUtil,
-                             AuctionDtoRedisMapper auctionDtoRedisMapper,
                              StringRedisTemplate stringRedisTemplate,
                              AuctionQueryService auctionQueryService) {
         this.auctionRepository = auctionRepository;
         this.productRepository = productRepository;
         this.secretEncryptionUtil = secretEncryptionUtil;
-        this.auctionDtoRedisMapper = auctionDtoRedisMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.auctionQueryService = auctionQueryService;
     }
@@ -153,7 +149,7 @@ public class AuctionController {
             );
             String auctionIdString = auction.getId().toString();
             String auctionHashKey = "auction:" + auctionIdString;
-            Map<String, String> auctionHash = auctionDtoRedisMapper.toRedisHash(auctionRedis);
+            Map<String, String> auctionHash = auctionQueryService.mapDtoToHash(auctionRedis);
             stringRedisTemplate.opsForHash().putAll(auctionHashKey, auctionHash);
             long startTimeEpoch = auctionRedis.startTime().toEpochMilli();
             stringRedisTemplate.opsForZSet().add("auctions:upcoming", auctionIdString, startTimeEpoch);

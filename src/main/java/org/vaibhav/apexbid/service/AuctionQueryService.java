@@ -1,5 +1,6 @@
 package org.vaibhav.apexbid.service;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,25 +23,25 @@ public class AuctionQueryService {
     // 1. ACTIVE (Ending soonest first, Ascending)
     public List<AuctionRedis> getActiveAuctions(int page, int size) {
         Set<String> ids = stringRedisTemplate.opsForZSet().range("auctions:active", getStart(page, size), getEnd(page, size));
-        return fetchAuctionsByIds(ids);
+        return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 2. UPCOMING (Starting soonest first, Ascending)
     public List<AuctionRedis> getUpcomingAuctions(int page, int size) {
         Set<String> ids = stringRedisTemplate.opsForZSet().range("auctions:upcoming", getStart(page, size), getEnd(page, size));
-        return fetchAuctionsByIds(ids);
+        return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 3. HIGHEST BIDS (Highest price first, Descending / Reverse)
     public List<AuctionRedis> getHighestBidAuctions(int page, int size) {
         Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange("auctions:highest_bids", getStart(page, size), getEnd(page, size));
-        return fetchAuctionsByIds(ids);
+        return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 4. MOST ACTIVE (Highest activity count first, Descending / Reverse)
     public List<AuctionRedis> getTrendingAuctions(int page, int size) {
         Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange("auctions:most_active", getStart(page, size), getEnd(page, size));
-        return fetchAuctionsByIds(ids);
+        return fetchAuctionsFromRedisByIds(ids);
     }
 
     public List<AuctionRedis> getSellerAuctionsEnriched(List<Auction> dbAuctions) {
@@ -67,7 +68,7 @@ public class AuctionQueryService {
 
         // 2. Fetch all live Active auctions from Redis in ONE network pipeline trip
         if (!activeIdsToFetch.isEmpty()) {
-            List<AuctionRedis> liveActiveAuctions = fetchAuctionsByIds(activeIdsToFetch);
+            List<AuctionRedis> liveActiveAuctions = fetchAuctionsFromRedisByIds(activeIdsToFetch);
             finalResponse.addAll(liveActiveAuctions);
         }
 
@@ -86,7 +87,7 @@ public class AuctionQueryService {
         return getStart(page, size) + size - 1;
     }
 
-    private List<AuctionRedis> fetchAuctionsByIds(Set<String> auctionIds) {
+    private List<AuctionRedis> fetchAuctionsFromRedisByIds(Set<String> auctionIds) {
         if (auctionIds == null || auctionIds.isEmpty()) return Collections.emptyList();
 
         // Fetch all hashes in one single network trip
@@ -140,5 +141,27 @@ public class AuctionQueryService {
                 Instant.ofEpochMilli(Long.parseLong((String) hash.get("start_time"))),
                 Instant.ofEpochMilli(Long.parseLong((String) hash.get("end_time")))
         );
+    }
+
+    public @NonNull Map<String, String> mapDtoToHash(AuctionRedis auction) {
+        Map<String, String> fields = new HashMap<>();
+
+        fields.put("id", auction.id().toString());
+        fields.put("title", auction.title());
+        fields.put("auction_type", auction.auctionType().name());
+        fields.put("status", auction.status().name());
+        fields.put("start_price", String.valueOf(auction.startPrice()));
+        fields.put("product_id", String.valueOf(auction.productId()));
+        fields.put("seller_id", String.valueOf(auction.sellerId()));
+        fields.put("seller_username", auction.sellerUsername());
+        fields.put("start_time", String.valueOf(auction.startTime().toEpochMilli()));
+        fields.put("end_time", String.valueOf(auction.endTime().toEpochMilli()));
+
+        // Null-safe handling for fields that might not exist yet
+        fields.put("winning_bid", auction.winningBid() != null ? String.valueOf(auction.winningBid()) : "");
+        fields.put("winner_id", auction.winnerId() != null ? String.valueOf(auction.winnerId()) : "");
+        fields.put("winner_username", auction.winnerUsername() != null ? auction.winnerUsername() : "");
+
+        return fields;
     }
 }

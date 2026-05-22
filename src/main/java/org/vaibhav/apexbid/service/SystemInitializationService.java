@@ -5,7 +5,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.enums.AuctionStatus;
-import org.vaibhav.apexbid.mapper.AuctionDtoRedisMapper;
 import org.vaibhav.apexbid.repository.AuctionRepository;
 
 import java.time.Instant;
@@ -19,12 +18,12 @@ public class SystemInitializationService {
     // Non-static final fields cleanly managed by Spring's application context
     private final StringRedisTemplate stringRedisTemplate;
     private final AuctionRepository auctionRepository;
-    private final AuctionDtoRedisMapper auctionDtoRedisMapper;
+    private final AuctionQueryService auctionQueryService;
 
-    public SystemInitializationService(StringRedisTemplate stringRedisTemplate, AuctionRepository auctionRepository, AuctionDtoRedisMapper auctionDtoRedisMapper) {
+    public SystemInitializationService(StringRedisTemplate stringRedisTemplate, AuctionRepository auctionRepository, AuctionQueryService auctionQueryService) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.auctionRepository = auctionRepository;
-        this.auctionDtoRedisMapper = auctionDtoRedisMapper;
+        this.auctionQueryService = auctionQueryService;
     }
 
 
@@ -50,7 +49,7 @@ public class SystemInitializationService {
 
                 // 1. Hydrate the main auction details mapping
                 if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(auctionHashKey))) {
-                    Map<String, String> fields = auctionDtoRedisMapper.toRedisHash(auction);
+                    Map<String, String> fields = auctionQueryService.mapDtoToHash(auction);
                     stringRedisTemplate.opsForHash().putAll(auctionHashKey, fields);
                 }
 
@@ -72,6 +71,7 @@ public class SystemInitializationService {
 
 
             }
+            log.info("[INITIALIZATION] Completed. {} loaded {} auctions into Redis", nodeId, targetAuctions.size());
             // Master switch flip
             stringRedisTemplate.opsForValue().set("system:state", "READY");
             log.info("[WARMUP-COMPLETE] Redis layer is loaded. System state flipped to READY.");
