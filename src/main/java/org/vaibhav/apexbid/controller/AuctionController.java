@@ -96,9 +96,12 @@ public class AuctionController {
                     auction.getAuctionType(),
                     auction.getStatus(),
                     auction.getStartPrice(),
+                    null,
                     savedProduct.getId(),
                     principal.id(),
                     principal.username(),
+                    null,
+                    null,
                     auction.getStartTime(),
                     auction.getEndTime()
             );

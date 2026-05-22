@@ -1,4 +1,4 @@
-package org.vaibhav.apexbid.controller;
+package org.vaibhav.apexbid.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.bind.annotation.RestController;

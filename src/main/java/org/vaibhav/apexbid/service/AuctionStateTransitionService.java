@@ -2,6 +2,7 @@ package org.vaibhav.apexbid.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.vaibhav.apexbid.repository.AuctionRepository;
 
@@ -15,10 +16,17 @@ import java.util.Set;
 public class AuctionStateTransitionService {
     private final StringRedisTemplate stringRedisTemplate;
     private final AuctionRepository auctionRepository;
+    private final DefaultRedisScript<Long> activateAuctionScript;
+    private final DefaultRedisScript<Long> queueSettlementScript;
 
-    public AuctionStateTransitionService(StringRedisTemplate stringRedisTemplate, AuctionRepository auctionRepository) {
+    public AuctionStateTransitionService(StringRedisTemplate stringRedisTemplate,
+                                         AuctionRepository auctionRepository,
+                                         DefaultRedisScript<Long> activateAuctionScript,
+                                         DefaultRedisScript<Long> queueSettlementScript) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.auctionRepository = auctionRepository;
+        this.activateAuctionScript = activateAuctionScript;
+        this.queueSettlementScript = queueSettlementScript;
     }
 
     public void activateUpcomingAuctions(String nodeId, String lockKey) {
@@ -31,21 +39,22 @@ public class AuctionStateTransitionService {
             if (toActivate != null && !toActivate.isEmpty()) {
                 List<Long> auctionIdsToActivate = new ArrayList<>();
                 for (String auctionId : toActivate) {
-                    String hashKey = "auction:" + auctionId;
-                    String endTimeStr = (String) stringRedisTemplate.opsForHash().get(hashKey, "end_time");
-                    String startPrice = (String) stringRedisTemplate.opsForHash().get(hashKey, "start_price");
-                    if (endTimeStr != null && startPrice != null) {
-                        long endTimeEpoch = Long.parseLong(endTimeStr);
+                    List<String> keys = List.of(
+                            "auction:" + auctionId,
+                            "auctions:upcoming",
+                            "auctions:active",
+                            "auctions:highest_bids",
+                            "auctions:most_active"
+                    );
+                    Long result = stringRedisTemplate.execute(
+                            activateAuctionScript,
+                            keys,
+                            auctionId
+                    );
 
-                        stringRedisTemplate.opsForHash().put(hashKey, "status", "ACTIVE");
-                        stringRedisTemplate.opsForZSet().remove("auctions:upcoming", auctionId);
-                        stringRedisTemplate.opsForZSet().add("auctions:active", auctionId, endTimeEpoch);
-
-                        stringRedisTemplate.opsForZSet().add("auctions:highest_bids", auctionId, Long.parseLong(startPrice));
-                        stringRedisTemplate.opsForZSet().add("auctions:most_active", auctionId, 0);
-
+                    if (Long.valueOf(1).equals(result)) {
                         auctionIdsToActivate.add(Long.parseLong(auctionId));
-                        log.info("[LIFECYCLE] Auction {} went LIVE in Redis.", auctionId);
+                        log.info("[LIFECYCLE] Auction {} went LIVE atomically in Redis.", auctionId);
                     }
                 }
                 if (!auctionIdsToActivate.isEmpty()) {
@@ -67,20 +76,22 @@ public class AuctionStateTransitionService {
             Set<String> toSettle = stringRedisTemplate.opsForZSet().rangeByScore("auctions:active", 0, nowEpoch);
             if (toSettle != null && !toSettle.isEmpty()) {
                 for (String auctionId : toSettle) {
-                    String hashKey = "auction:" + auctionId;
+                    List<String> keys = List.of(
+                            "auction:" + auctionId,
+                            "auctions:active",
+                            "auctions:highest_bids",
+                            "auctions:most_active",
+                            "queue:settlement"
+                    );
+                    Long result = stringRedisTemplate.execute(
+                            queueSettlementScript,
+                            keys,
+                            auctionId
+                    );
 
-                    //1.push to settlement queue
-                    stringRedisTemplate.opsForList().leftPush("queue:settlement", auctionId);
-
-                    //2. change status to payment_pending
-                    stringRedisTemplate.opsForHash().put(hashKey, "status", "PAYMENT_PENDING");
-
-                    //3. remove from active, and secondary indexes
-                    stringRedisTemplate.opsForZSet().remove("auctions:active", auctionId);
-                    stringRedisTemplate.opsForZSet().remove("auctions:highest_bids", auctionId);
-                    stringRedisTemplate.opsForZSet().remove("auctions:most_active", auctionId);
-
-                    log.info("[LIFECYCLE] Auction {} expired. Safely committed to settlement queue.", auctionId);
+                    if (Long.valueOf(1).equals(result)) {
+                        log.info("[LIFECYCLE] Auction {} expired. Safely committed to settlement queue.", auctionId);
+                    }
                 }
             }
         } catch (Exception e) {

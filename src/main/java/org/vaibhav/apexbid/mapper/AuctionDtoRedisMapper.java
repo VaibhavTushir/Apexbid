@@ -18,14 +18,16 @@ public class AuctionDtoRedisMapper {
         fields.put("auction_type", auction.auctionType().name());
         fields.put("status", auction.status().name());
         fields.put("start_price", String.valueOf(auction.startPrice()));
-        fields.put("winning_bid", "");
         fields.put("product_id", String.valueOf(auction.productId()));
         fields.put("seller_id", String.valueOf(auction.sellerId()));
         fields.put("seller_username", auction.sellerUsername());
-        fields.put("winner_id", "");
-        fields.put("winner_name", "");
         fields.put("start_time", String.valueOf(auction.startTime().toEpochMilli()));
         fields.put("end_time", String.valueOf(auction.endTime().toEpochMilli()));
+
+        // Null-safe handling for fields that might not exist yet
+        fields.put("winning_bid", auction.winningBid() != null ? String.valueOf(auction.winningBid()) : "");
+        fields.put("winner_id", auction.winnerId() != null ? String.valueOf(auction.winnerId()) : "");
+        fields.put("winner_username", auction.winnerUsername() != null ? auction.winnerUsername() : "");
 
         return fields;
     }
