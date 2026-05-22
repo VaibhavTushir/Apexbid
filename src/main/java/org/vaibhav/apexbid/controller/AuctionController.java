@@ -7,10 +7,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.dto.CreateAuctionRequest;
 import org.vaibhav.apexbid.entity.Auction;
@@ -22,10 +19,13 @@ import org.vaibhav.apexbid.repository.AuctionRepository;
 import org.vaibhav.apexbid.repository.ProductRepository;
 import org.vaibhav.apexbid.security.AuthenticatedUser;
 import org.vaibhav.apexbid.security.SecretEncryptionUtil;
+import org.vaibhav.apexbid.service.AuctionQueryService;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -36,14 +36,61 @@ public class AuctionController {
     private final SecretEncryptionUtil secretEncryptionUtil;
     private final AuctionDtoRedisMapper auctionDtoRedisMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final AuctionQueryService auctionQueryService;
 
-
-    public AuctionController(AuctionRepository auctionRepository, ProductRepository productRepository, SecretEncryptionUtil secretEncryptionUtil, AuctionDtoRedisMapper auctionDtoRedisMapper, StringRedisTemplate stringRedisTemplate) {
+    public AuctionController(AuctionRepository auctionRepository,
+                             ProductRepository productRepository,
+                             SecretEncryptionUtil secretEncryptionUtil,
+                             AuctionDtoRedisMapper auctionDtoRedisMapper,
+                             StringRedisTemplate stringRedisTemplate,
+                             AuctionQueryService auctionQueryService) {
         this.auctionRepository = auctionRepository;
         this.productRepository = productRepository;
         this.secretEncryptionUtil = secretEncryptionUtil;
         this.auctionDtoRedisMapper = auctionDtoRedisMapper;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.auctionQueryService = auctionQueryService;
+    }
+
+    //Zero-DB Redis Feeds (Public)
+    @GetMapping("/active")
+    public ResponseEntity<List<AuctionRedis>> getActiveFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(auctionQueryService.getActiveAuctions(page, size));
+    }
+
+    @GetMapping("/upcoming")
+    public ResponseEntity<List<AuctionRedis>> getUpcomingFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(auctionQueryService.getUpcomingAuctions(page, size));
+    }
+
+    @GetMapping("/trending")
+    public ResponseEntity<List<AuctionRedis>> getTrendingFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(auctionQueryService.getTrendingAuctions(page, size));
+    }
+
+    @GetMapping("/highest-bids")
+    public ResponseEntity<List<AuctionRedis>> getHighestBidsFeed(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(auctionQueryService.getHighestBidAuctions(page, size));
+    }
+
+    //Database Queries
+    @GetMapping("/seller/{sellerId}")
+    public ResponseEntity<List<AuctionRedis>> getAuctionsBySeller(@PathVariable Long sellerId) {
+        // Fast lookup for the seller's entire portfolio
+        List<Auction> dbAuctions = auctionRepository.findBySellerId(sellerId);
+
+        // Enrich the active ones with live Redis data
+        List<AuctionRedis> response = auctionQueryService.getSellerAuctionsEnriched(sellerId, dbAuctions);
+
+        return ResponseEntity.ok(response);
     }
 
     //Create auction and product (Transactional)
