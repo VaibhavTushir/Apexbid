@@ -1,5 +1,6 @@
 package org.vaibhav.apexbid.controller;
 
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.vaibhav.apexbid.dto.LoginRequest;
 import org.vaibhav.apexbid.dto.RegisterRequest;
 import org.vaibhav.apexbid.entity.User;
+import org.vaibhav.apexbid.entity.Wallet;
 import org.vaibhav.apexbid.repository.UserRepository;
+import org.vaibhav.apexbid.repository.WalletRepository;
 import org.vaibhav.apexbid.security.JwtService;
 
 import java.util.Map;
@@ -23,13 +26,16 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final WalletRepository walletRepository;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, WalletRepository walletRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.walletRepository = walletRepository;
     }
 
+    @Transactional
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
         if (userRepository.findByEmail(registerRequest.email()).isPresent()) {
@@ -46,7 +52,11 @@ public class AuthController {
                 registerRequest.email(),
                 passwordEncoder.encode(registerRequest.password())
         );
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        Wallet wallet = new Wallet();
+        wallet.setUser(savedUser);
+        wallet.setBalance(1000000L); //Initial balance of $10000.00
+        walletRepository.save(wallet);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "User registered successfully!"));

@@ -27,9 +27,4 @@ public class Wallet {
     @Column(name = "version")
     private Long version;
 
-    public Wallet(Long userId, Long balance) {
-        this.userId = userId;
-        this.balance = balance;
-        this.version = 0L;
-    }
 }
