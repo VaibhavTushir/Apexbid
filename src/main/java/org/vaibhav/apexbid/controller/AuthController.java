@@ -2,6 +2,7 @@ package org.vaibhav.apexbid.controller;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +28,20 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final WalletRepository walletRepository;
+    private final StringRedisTemplate stringRedisTemplate;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService, WalletRepository walletRepository) {
+    public AuthController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService,
+                          WalletRepository walletRepository,
+                          StringRedisTemplate stringRedisTemplate
+    ) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
         this.walletRepository = walletRepository;
+        this.stringRedisTemplate = stringRedisTemplate;
+
     }
 
     @Transactional
@@ -55,9 +64,12 @@ public class AuthController {
         User savedUser = userRepository.save(user);
         Wallet wallet = new Wallet();
         wallet.setUser(savedUser);
-        wallet.setBalance(1000000L); //Initial balance of $10000.00
+        wallet.setBalance(1000000L);//sign up bonus, in cents $10000.00
         walletRepository.save(wallet);
-
+        stringRedisTemplate.opsForHash().putAll("wallet:" + savedUser.getId(), Map.of(
+                "balance", "" + wallet.getBalance(),
+                "locked", "0"
+        ));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "User registered successfully!"));
     }

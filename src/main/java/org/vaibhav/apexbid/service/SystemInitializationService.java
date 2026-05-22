@@ -26,7 +26,9 @@ public class SystemInitializationService {
         this.auctionQueryService = auctionQueryService;
     }
 
-
+    //Skipped pipelining here since it only runs when redis breathes for the very first time
+    //or in case of a fatal crash that results in complete redis memory wipeout
+    //otherwise redis --appendonly file will ensure durability and persistence of data
     public void initializeClusterData(String nodeId, String lockKey) {
         // Ensure we still hold the lock before touching the database
         if (!nodeId.equals(stringRedisTemplate.opsForValue().get(lockKey))) {
