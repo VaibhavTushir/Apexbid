@@ -96,8 +96,8 @@ public class ClusterCoordinator {
         try {
             String currentState = stringRedisTemplate.opsForValue().get(stateKey);
             if ("READY".equals(currentState)) {
-                auctionStateTransitionService.activateUpcomingAuctions(nodeId, lockKey);
                 auctionStateTransitionService.queueExpiredAuctions(nodeId, lockKey);
+                auctionStateTransitionService.activateUpcomingAuctions(nodeId, lockKey);
             }
         } catch (Exception e) {
             log.error("[LIFECYCLE ERROR] Exception in leader lifecycle tick for node: {}", nodeId, e);
@@ -105,10 +105,10 @@ public class ClusterCoordinator {
     }
 
     /**
-     * 3. Rolling Long-Interval Look-Ahead Hydration (Runs every 1 minute)
+     * 3. Rolling Long-Interval Look-Ahead Hydration (Runs every 10 minute)
      * Pulls upcoming database entries into Redis ahead of schedule.
      */
-    @Scheduled(fixedDelay = 60000)
+    @Scheduled(fixedDelay = 600000)
     public void tickRollingHydration() {
         if (!isLeader) {
             return;
