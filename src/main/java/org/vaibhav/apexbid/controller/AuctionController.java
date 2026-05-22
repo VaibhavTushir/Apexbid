@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -88,7 +87,7 @@ public class AuctionController {
         List<Auction> dbAuctions = auctionRepository.findBySellerId(sellerId);
 
         // Enrich the active ones with live Redis data
-        List<AuctionRedis> response = auctionQueryService.getSellerAuctionsEnriched(sellerId, dbAuctions);
+        List<AuctionRedis> response = auctionQueryService.getSellerAuctionsEnriched(dbAuctions);
 
         return ResponseEntity.ok(response);
     }

@@ -43,7 +43,7 @@ public class AuctionQueryService {
         return fetchAuctionsByIds(ids);
     }
 
-    public List<AuctionRedis> getSellerAuctionsEnriched(Long sellerId, List<Auction> dbAuctions) {
+    public List<AuctionRedis> getSellerAuctionsEnriched(List<Auction> dbAuctions) {
         List<AuctionRedis> finalResponse = new ArrayList<>();
         Set<String> activeIdsToFetch = new HashSet<>();
 
