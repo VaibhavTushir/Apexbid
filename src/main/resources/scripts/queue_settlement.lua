@@ -10,7 +10,7 @@ if status ~= 'ACTIVE' then
     return 0
 end
 
-redis.call('HSET', KEYS[1], 'status', 'PAYMENT_PENDING')
+redis.call('HSET', KEYS[1], 'status', 'ENDED')
 redis.call('ZREM', KEYS[2], ARGV[1])
 redis.call('ZREM', KEYS[3], ARGV[1])
 redis.call('ZREM', KEYS[4], ARGV[1])
