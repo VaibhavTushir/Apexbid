@@ -24,4 +24,11 @@ redis.call('ZADD', KEYS[3], end_time, ARGV[1])
 redis.call('ZADD', KEYS[4], start_price, ARGV[1])
 redis.call('ZADD', KEYS[5], 0, ARGV[1])
 
+-- Broadcast the status change to the frontend
+local payload = cjson.encode({
+    auctionId = ARGV[1],
+    status = "ACTIVE"
+})
+redis.call('PUBLISH', 'auction:updates', payload)
+
 return 1

@@ -17,4 +17,11 @@ redis.call('ZREM', KEYS[4], ARGV[1])
 
 redis.call('LPUSH', KEYS[5], ARGV[1])
 
+-- Broadcast the status change to the frontend
+local payload = cjson.encode({
+    auctionId = ARGV[1],
+    status = "ENDED"
+})
+redis.call('PUBLISH', 'auction:updates', payload)
+
 return 1
