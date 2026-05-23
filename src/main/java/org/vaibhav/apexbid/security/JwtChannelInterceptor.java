@@ -17,10 +17,10 @@ import java.util.Collections;
 
 @Slf4j
 @Component
-public class JWTChannelInterceptor implements ChannelInterceptor {
+public class JwtChannelInterceptor implements ChannelInterceptor {
     private final JwtService jwtService;
 
-    public JWTChannelInterceptor(JwtService jwtService) {
+    public JwtChannelInterceptor(JwtService jwtService) {
         this.jwtService = jwtService;
     }
 
