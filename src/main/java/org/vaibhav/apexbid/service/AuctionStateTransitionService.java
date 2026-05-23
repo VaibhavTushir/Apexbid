@@ -112,7 +112,7 @@ public class AuctionStateTransitionService {
                                     "auctions:active",
                                     "auctions:highest_bids",
                                     "auctions:most_active",
-                                    "queue:settlement"
+                                    "auctions:settlement:queue"
                             );
 
                             // Queue the script
