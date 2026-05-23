@@ -104,6 +104,9 @@ public class AuctionController {
         if (request.endTime().isBefore(request.startTime().plus(Duration.ofMinutes(1)))) {
             return ResponseEntity.badRequest().body("Auction must last at least 1 minute");
         }
+        if(request.startPrice() < 100){
+            return ResponseEntity.badRequest().body("Starting price must be at least 100 cents");
+        }
 
         Product product = new Product();
         product.setName(request.productName());
