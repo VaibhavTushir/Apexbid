@@ -7,5 +7,6 @@ public enum AuctionStatus {
     UNSOLD,
     ESCROW_SECURED,
     SETTLED,
+    DEFAULTED,
     CANCELLED,
 }
