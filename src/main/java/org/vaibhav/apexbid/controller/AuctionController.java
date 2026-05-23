@@ -16,7 +16,7 @@ import org.vaibhav.apexbid.entity.User;
 import org.vaibhav.apexbid.enums.AuctionStatus;
 import org.vaibhav.apexbid.repository.AuctionRepository;
 import org.vaibhav.apexbid.repository.ProductRepository;
-import org.vaibhav.apexbid.dto.AuthenticatedUser;
+import org.vaibhav.apexbid.security.AuthenticatedUser;
 import org.vaibhav.apexbid.security.SecretEncryptionUtil;
 import org.vaibhav.apexbid.service.AuctionQueryService;
 
