@@ -73,3 +73,13 @@ CREATE TABLE IF NOT EXISTS transactions
 -- Indexes for transaction history lookups
 CREATE INDEX IF NOT EXISTS idx_transactions_sender ON transactions (sender_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_receiver ON transactions (receiver_id);
+
+CREATE TABLE IF NOT EXISTS failed_settlements
+(
+    id            BIGSERIAL PRIMARY KEY,
+    auction_id    BIGINT      NOT NULL,
+    error_message TEXT        NOT NULL,
+    failed_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status        VARCHAR(50) NOT NULL DEFAULT 'PENDING_REVIEW'
+);
+CREATE INDEX IF NOT EXISTS idx_failed_settlements_status ON failed_settlements(status);
