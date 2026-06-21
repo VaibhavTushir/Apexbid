@@ -20,6 +20,10 @@ public class FailedSettlement {
     @Column(name = "auction_id", nullable = false)
     private Long auctionId;
 
+    // NEW: Tracks whether it failed during background sweep or user checkout
+    @Column(name = "phase", nullable = false, length = 30)
+    private String phase;
+
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
@@ -29,7 +33,6 @@ public class FailedSettlement {
     @Column(name = "status", nullable = false)
     private String status;
 
-    // Automatically executes right before Spring saves this to Postgres
     @PrePersist
     protected void onCreate() {
         this.failedAt = Instant.now();

@@ -4,6 +4,7 @@
 -- KEYS[4] = most_active_zset ("auctions:most_active")
 -- KEYS[5] = settlement_queue ("queue:settlement")
 -- ARGV[1] = auction_id
+-- ARGV[2] = channelAuctionUpdates ("auction:updates")
 
 local status = redis.call('HGET', KEYS[1], 'status')
 if status ~= 'ACTIVE' then
@@ -17,11 +18,11 @@ redis.call('ZREM', KEYS[4], ARGV[1])
 
 redis.call('LPUSH', KEYS[5], ARGV[1])
 
--- Broadcast the status change to the frontend
+-- Broadcast the status change to the frontend using dynamic channel
 local payload = cjson.encode({
     auctionId = ARGV[1],
     status = "ENDED"
 })
-redis.call('PUBLISH', 'auction:updates', payload)
+redis.call('PUBLISH', ARGV[2], payload)
 
 return 1

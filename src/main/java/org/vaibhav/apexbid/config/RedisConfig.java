@@ -13,6 +13,12 @@ import org.vaibhav.apexbid.service.RedisMessageSubscriber;
 @Configuration
 public class RedisConfig {
 
+    private final RedisKeysConfig redisKeys;
+
+    public RedisConfig(RedisKeysConfig redisKeys) {
+        this.redisKeys = redisKeys;
+    }
+
     // 1. PUB/SUB Channels
     @Bean
     public MessageListenerAdapter messageListener(RedisMessageSubscriber subscriber) {
@@ -25,15 +31,14 @@ public class RedisConfig {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
 
-        // Listen to both channels
-        container.addMessageListener(listenerAdapter, new ChannelTopic("auction:updates"));
-        container.addMessageListener(listenerAdapter, new ChannelTopic("wallet:updates"));
+        // Listen to both channels using centralized config
+        container.addMessageListener(listenerAdapter, new ChannelTopic(redisKeys.getChannelAuctionUpdates()));
+        container.addMessageListener(listenerAdapter, new ChannelTopic(redisKeys.getChannelWalletUpdates()));
 
         return container;
     }
 
-    // 2. Lua Script
-    //Real-time bidding script
+    // 2. Lua Scripts
     @Bean
     public DefaultRedisScript<Long> placeBidScript() {
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
@@ -41,6 +46,7 @@ public class RedisConfig {
         redisScript.setResultType(Long.class);
         return redisScript;
     }
+
     @Bean
     public DefaultRedisScript<Long> hydrateAuctionScript() {
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
@@ -49,9 +55,6 @@ public class RedisConfig {
         return redisScript;
     }
 
-    //Auction state transition scripts
-
-    //Upcoming -> Active
     @Bean
     public DefaultRedisScript<Long> activateAuctionScript() {
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
@@ -59,7 +62,7 @@ public class RedisConfig {
         redisScript.setResultType(Long.class);
         return redisScript;
     }
-    //Active ->Settlement Queue
+
     @Bean
     public DefaultRedisScript<Long> queueSettlementScript() {
         DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
@@ -68,4 +71,27 @@ public class RedisConfig {
         return redisScript;
     }
 
+    @Bean
+    public DefaultRedisScript<String> fetchFromQueueScript() {
+        DefaultRedisScript<String> redisScript = new DefaultRedisScript<>();
+        redisScript.setLocation(new ClassPathResource("scripts/fetch_from_queue.lua"));
+        redisScript.setResultType(String.class);
+        return redisScript;
+    }
+
+    @Bean
+    public DefaultRedisScript<Long> finalizeSettlementScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("scripts/finalize_settlement.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
+    @Bean
+    public DefaultRedisScript<Long> finalizeCheckOutScript() {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("scripts/finalize_checkout.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
 }

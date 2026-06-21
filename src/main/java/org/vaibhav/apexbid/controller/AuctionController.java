@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.vaibhav.apexbid.config.RedisKeysConfig;
 import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.dto.CreateAuctionRequest;
 import org.vaibhav.apexbid.entity.Auction;
@@ -34,17 +35,20 @@ public class AuctionController {
     private final SecretEncryptionUtil secretEncryptionUtil;
     private final StringRedisTemplate stringRedisTemplate;
     private final AuctionQueryService auctionQueryService;
+    private final RedisKeysConfig redisKeys;
 
     public AuctionController(AuctionRepository auctionRepository,
                              ProductRepository productRepository,
                              SecretEncryptionUtil secretEncryptionUtil,
                              StringRedisTemplate stringRedisTemplate,
-                             AuctionQueryService auctionQueryService) {
+                             AuctionQueryService auctionQueryService,
+                             RedisKeysConfig redisKeys) {
         this.auctionRepository = auctionRepository;
         this.productRepository = productRepository;
         this.secretEncryptionUtil = secretEncryptionUtil;
         this.stringRedisTemplate = stringRedisTemplate;
         this.auctionQueryService = auctionQueryService;
+        this.redisKeys = redisKeys;
     }
 
     //Zero-DB Redis Feeds (Public)
@@ -151,17 +155,19 @@ public class AuctionController {
                     auction.getEndTime()
             );
             String auctionIdString = auction.getId().toString();
-            String auctionHashKey = "auction:" + auctionIdString;
+
+            // Centralized Configuration Keys
+            String auctionHashKey = redisKeys.getAuctionHashPrefix() + auctionIdString;
             Map<String, String> auctionHash = auctionQueryService.mapDtoToHash(auctionRedis);
             stringRedisTemplate.opsForHash().putAll(auctionHashKey, auctionHash);
+
             long startTimeEpoch = auctionRedis.startTime().toEpochMilli();
-            stringRedisTemplate.opsForZSet().add("auctions:upcoming", auctionIdString, startTimeEpoch);
+            stringRedisTemplate.opsForZSet().add(redisKeys.getAuctionsUpcoming(), auctionIdString, startTimeEpoch);
+
             log.info("Auction {} starts in <10 mins. Injected directly into Redis.", auction.getId());
         }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "Auction created successfully!"));
 
     }
-
-
 }

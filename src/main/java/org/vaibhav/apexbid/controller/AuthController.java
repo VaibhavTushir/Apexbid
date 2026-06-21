@@ -2,7 +2,6 @@ package org.vaibhav.apexbid.controller;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -14,10 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.vaibhav.apexbid.dto.LoginRequest;
 import org.vaibhav.apexbid.dto.RegisterRequest;
 import org.vaibhav.apexbid.entity.User;
-import org.vaibhav.apexbid.entity.Wallet;
 import org.vaibhav.apexbid.repository.UserRepository;
-import org.vaibhav.apexbid.repository.WalletRepository;
 import org.vaibhav.apexbid.security.JwtService;
+import org.vaibhav.apexbid.service.WalletService;
 
 import java.util.Map;
 
@@ -27,21 +25,17 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final WalletRepository walletRepository;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final WalletService walletService;
 
     public AuthController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder,
                           JwtService jwtService,
-                          WalletRepository walletRepository,
-                          StringRedisTemplate stringRedisTemplate
+                          WalletService walletService
     ) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
-        this.walletRepository = walletRepository;
-        this.stringRedisTemplate = stringRedisTemplate;
-
+        this.walletService = walletService;
     }
 
     @Transactional
@@ -62,14 +56,9 @@ public class AuthController {
                 passwordEncoder.encode(registerRequest.password())
         );
         User savedUser = userRepository.save(user);
-        Wallet wallet = new Wallet();
-        wallet.setUser(savedUser);
-        wallet.setBalance(1000000L);//sign up bonus, in cents $10000.00
-        walletRepository.save(wallet);
-        stringRedisTemplate.opsForHash().putAll("wallet:" + savedUser.getId(), Map.of(
-                "balance", "" + wallet.getBalance(),
-                "locked", "0"
-        ));
+
+        walletService.initializeNewWallet(savedUser);
+
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(Map.of("message", "User registered successfully!"));
     }

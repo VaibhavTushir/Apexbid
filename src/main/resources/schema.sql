@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS auctions
     id           BIGSERIAL PRIMARY KEY,
     title        VARCHAR(255) NOT NULL,
     auction_type VARCHAR(30)  NOT NULL,                                 -- STANDARD, ANTI_SNIPE
-    status       VARCHAR(30)  NOT NULL,                                 -- UPCOMING, ACTIVE, PAYMENT_PENDING, SETTLED, CANCELLED
+    status       VARCHAR(30)  NOT NULL,                                 -- UPCOMING, ACTIVE, ESCROW_SECURED, SETTLED, UNSOLD, CANCELLED
     start_price  BIGINT       NOT NULL,                                 -- Stored as cents
     winning_bid  BIGINT,                                                -- Nullable until a bid is placed
     product_id   BIGINT       NOT NULL UNIQUE REFERENCES products (id), -- UNIQUE enforces the @OneToOne mapping
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS transactions
     receiver_id      BIGINT REFERENCES users (id),    -- NULL for WITHDRAWAL
     auction_id       BIGINT REFERENCES auctions (id), -- NULL for DEPOSIT/WITHDRAWAL
     amount           BIGINT      NOT NULL,            -- Stored as absolute cents
-    transaction_type VARCHAR(30) NOT NULL,            -- DEPOSIT, WITHDRAWAL, INITIAL_CHARGE, FINAL_SETTLEMENT
+    transaction_type VARCHAR(30) NOT NULL,            -- DEPOSIT, WITHDRAWAL, ESCROW_TRANSFER, FINAL_PAYMENT
     created_at       TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 -- Indexes for transaction history lookups
@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS failed_settlements
 (
     id            BIGSERIAL PRIMARY KEY,
     auction_id    BIGINT      NOT NULL,
+    phase         VARCHAR(30) NOT NULL, -- 'SETTLEMENT' or 'CHECKOUT'
     error_message TEXT        NOT NULL,
     failed_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status        VARCHAR(50) NOT NULL DEFAULT 'PENDING_REVIEW'

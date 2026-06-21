@@ -3,7 +3,9 @@
 -- KEYS[3] = active_zset ("auctions:active")
 -- KEYS[4] = highest_bids_zset ("auctions:highest_bids")
 -- KEYS[5] = most_active_zset ("auctions:most_active")
+
 -- ARGV[1] = auction_id ("123")
+-- ARGV[2] = channel_auction_updates ("auction:updates")
 
 -- Fetch all 3 fields
 local auction_data = redis.call('HMGET', KEYS[1], 'status', 'end_time', 'start_price')
@@ -24,11 +26,11 @@ redis.call('ZADD', KEYS[3], end_time, ARGV[1])
 redis.call('ZADD', KEYS[4], start_price, ARGV[1])
 redis.call('ZADD', KEYS[5], 0, ARGV[1])
 
--- Broadcast the status change to the frontend
+-- Broadcast the status change to the frontend using dynamic channel
 local payload = cjson.encode({
     auctionId = ARGV[1],
     status = "ACTIVE"
 })
-redis.call('PUBLISH', 'auction:updates', payload)
+redis.call('PUBLISH', ARGV[2], payload)
 
 return 1

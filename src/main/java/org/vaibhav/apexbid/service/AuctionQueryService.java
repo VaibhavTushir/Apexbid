@@ -4,6 +4,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.vaibhav.apexbid.config.RedisKeysConfig;
 import org.vaibhav.apexbid.dto.AuctionRedis;
 import org.vaibhav.apexbid.entity.Auction;
 import org.vaibhav.apexbid.enums.AuctionStatus;
@@ -15,32 +16,34 @@ import java.util.*;
 @Service
 public class AuctionQueryService {
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedisKeysConfig redisKeys;
 
-    public AuctionQueryService(StringRedisTemplate stringRedisTemplate) {
+    public AuctionQueryService(StringRedisTemplate stringRedisTemplate, RedisKeysConfig redisKeys) {
         this.stringRedisTemplate = stringRedisTemplate;
+        this.redisKeys = redisKeys;
     }
 
     // 1. ACTIVE (Ending soonest first, Ascending)
     public List<AuctionRedis> getActiveAuctions(int page, int size) {
-        Set<String> ids = stringRedisTemplate.opsForZSet().range("auctions:active", getStart(page, size), getEnd(page, size));
+        Set<String> ids = stringRedisTemplate.opsForZSet().range(redisKeys.getAuctionsActive(), getStart(page, size), getEnd(page, size));
         return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 2. UPCOMING (Starting soonest first, Ascending)
     public List<AuctionRedis> getUpcomingAuctions(int page, int size) {
-        Set<String> ids = stringRedisTemplate.opsForZSet().range("auctions:upcoming", getStart(page, size), getEnd(page, size));
+        Set<String> ids = stringRedisTemplate.opsForZSet().range(redisKeys.getAuctionsUpcoming(), getStart(page, size), getEnd(page, size));
         return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 3. HIGHEST BIDS (Highest price first, Descending / Reverse)
     public List<AuctionRedis> getHighestBidAuctions(int page, int size) {
-        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange("auctions:highest_bids", getStart(page, size), getEnd(page, size));
+        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange(redisKeys.getAuctionsHighestBids(), getStart(page, size), getEnd(page, size));
         return fetchAuctionsFromRedisByIds(ids);
     }
 
     // 4. MOST ACTIVE (Highest activity count first, Descending / Reverse)
     public List<AuctionRedis> getTrendingAuctions(int page, int size) {
-        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange("auctions:most_active", getStart(page, size), getEnd(page, size));
+        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange(redisKeys.getAuctionsMostActive(), getStart(page, size), getEnd(page, size));
         return fetchAuctionsFromRedisByIds(ids);
     }
 
@@ -93,7 +96,7 @@ public class AuctionQueryService {
         // Fetch all hashes in one single network trip
         List<Object> results = stringRedisTemplate.executePipelined((RedisConnection connection) -> {
             for (String id : auctionIds) {
-                byte[] key = stringRedisTemplate.getStringSerializer().serialize("auction:" + id);
+                byte[] key = stringRedisTemplate.getStringSerializer().serialize(redisKeys.getAuctionHashPrefix() + id);
                 connection.hashCommands().hGetAll(key);
             }
             return null;
