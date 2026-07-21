@@ -73,6 +73,12 @@ public class AuctionController {
         return ResponseEntity.ok(auctionQueryService.getTrendingAuctions(page, size));
     }
 
+    @GetMapping("/winning")
+    public ResponseEntity<List<AuctionRedis>> getWinningAuctions(
+            @AuthenticationPrincipal AuthenticatedUser principal) {
+        return ResponseEntity.ok(auctionQueryService.getWinningAuctions(principal.id()));
+    }
+
     @GetMapping("/highest-bids")
     public ResponseEntity<List<AuctionRedis>> getHighestBidsFeed(
             @RequestParam(defaultValue = "0") int page,

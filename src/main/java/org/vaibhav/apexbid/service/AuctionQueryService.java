@@ -81,6 +81,15 @@ public class AuctionQueryService {
         return finalResponse;
     }
 
+    /**
+     * Fetches all auctions a user is currently winning from Redis.
+     */
+    public List<AuctionRedis> getWinningAuctions(Long userId) {
+        Set<String> auctionIds = stringRedisTemplate.opsForSet()
+                .members(redisKeys.getWinningSetPrefix() + userId);
+        return fetchAuctionsFromRedisByIds(auctionIds);
+    }
+
     //Helper Methods
     private long getStart(int page, int size) {
         return (long) page * size;

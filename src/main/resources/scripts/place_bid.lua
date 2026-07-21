@@ -42,6 +42,7 @@ local currentTime = tonumber(ARGV[5])
 local walletHashPrefix = ARGV[6]
 local channelWalletUpdates = ARGV[7]
 local channelAuctionUpdates = ARGV[8]
+local winningSetPrefix = ARGV[9]
 
 -- 1. Auction Validation
 local auctionData = redis.call('HMGET', auctionKey, 'status', 'end_time', 'winning_bid', 'winner_id', 'auction_type', 'seller_id', 'start_price')
@@ -116,10 +117,16 @@ else
         local oldAvail = redis.call('HGET', prevWalletKey, 'balance')
         local oldLocked = redis.call('HGET', prevWalletKey, 'locked')
         redis.call('PUBLISH', channelWalletUpdates, cjson.encode({userId = prevWinnerId, balance = oldAvail, locked = oldLocked}))
+
+        -- Remove auction from previous winner's winning set
+        redis.call('SREM', winningSetPrefix .. prevWinnerId, auctionId)
     end
 
     redis.call('HINCRBY', newWalletKey, 'balance', -requiredEscrow)
     redis.call('HINCRBY', newWalletKey, 'locked', requiredEscrow)
+
+    -- Add auction to new winner's winning set
+    redis.call('SADD', winningSetPrefix .. newUserId, auctionId)
 end
 
 local newAvail = redis.call('HGET', newWalletKey, 'balance')

@@ -18,6 +18,7 @@ public class RedisKeysConfig {
     // Hash Prefixes
     private String auctionHashPrefix;
     private String walletHashPrefix;
+    private String winningSetPrefix;
 
     // Core ZSETs
     private String auctionsUpcoming;

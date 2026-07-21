@@ -6,6 +6,7 @@
 -- ARGV[3] = escrowAmount
 -- ARGV[4] = sellerId
 -- ARGV[5] = channelWalletUpdates ("wallet:updates")
+-- ARGV[6] = winningSetPrefix     ("winning:")
 
 -- 1. Idempotency Check: If the hash is gone, we already processed this. Stop immediately.
 if redis.call('EXISTS', KEYS[1]) == 0 then
@@ -23,6 +24,10 @@ if ARGV[2] and ARGV[2] ~= "" and tonumber(ARGV[3]) > 0 then
 
     -- Increment Seller Available Balance
     redis.call('HINCRBY', KEYS[3], 'balance', tonumber(ARGV[3]))
+
+    -- Remove auction from winner's winning set (auction is now settled)
+    local winningSetPrefix = ARGV[6]
+    redis.call('SREM', winningSetPrefix .. ARGV[2], ARGV[1])
 
     local channelWalletUpdates = ARGV[5]
 

@@ -126,7 +126,8 @@ public class AuctionSettlementService {
                 winnerId,
                 String.valueOf(escrowAmount),
                 String.valueOf(auction.getSeller().getId()),
-                redisKeys.getChannelWalletUpdates()
+                redisKeys.getChannelWalletUpdates(),
+                redisKeys.getWinningSetPrefix()
         );
     }
 

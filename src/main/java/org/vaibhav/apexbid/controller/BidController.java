@@ -87,7 +87,8 @@ public class BidController {
                 String.valueOf(System.currentTimeMillis()),// ARGV[5]
                 redisKeys.getWalletHashPrefix(),           // ARGV[6]
                 redisKeys.getChannelWalletUpdates(),       // ARGV[7]
-                redisKeys.getChannelAuctionUpdates()       // ARGV[8]
+                redisKeys.getChannelAuctionUpdates(),      // ARGV[8]
+                redisKeys.getWinningSetPrefix()            // ARGV[9]
         );
     }
 
